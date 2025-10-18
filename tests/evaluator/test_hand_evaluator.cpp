@@ -118,3 +118,42 @@ INSTANTIATE_TEST_SUITE_P(
         }
     )
 );
+
+//TODO: refactor into test suite
+TEST(HandEvaluator, HandEvaluatorScores) {
+    PokerEngine::Evaluator::HandEvaluator evaluator{};
+
+    std::vector<Card> community = {"Ac"_c, "6h"_c, "7c"_c, "5c"_c, "5s"_c};
+    std::vector<Card> hole1 = {"Ad"_c, "5d"_c};//full house
+    std::vector<Card> hole2 = {"Kc"_c, "Qc"_c};//flush
+    
+    std::vector<Card> hand1 = community;
+    hand1.insert(hand1.end(), hole1.begin(), hole1.end());
+
+    std::vector<Card> hand2 = community;
+    hand2.insert(hand2.end(), hole2.begin(), hole2.end());
+
+    auto hand_eval_1 = evaluator.evaluate(hand1);
+    auto hand_eval_2 = evaluator.evaluate(hand2);
+
+    ASSERT_TRUE(hand_eval_1 > hand_eval_2);  
+}
+
+TEST(HandEvaluator, HandEvaluatorScores1) {
+    PokerEngine::Evaluator::HandEvaluator evaluator{};
+
+    std::vector<Card> community = {"Ac"_c, "6h"_c, "7c"_c, "5c"_c, "5s"_c};
+    std::vector<Card> hole1 = {"Kc"_c, "3c"_c};//K-high flush
+    std::vector<Card> hole2 = {"8c"_c, "2c"_c};//8-high flush
+    
+    std::vector<Card> hand1 = community;
+    hand1.insert(hand1.end(), hole1.begin(), hole1.end());
+
+    std::vector<Card> hand2 = community;
+    hand2.insert(hand2.end(), hole2.begin(), hole2.end());
+
+    auto hand_eval_1 = evaluator.evaluate(hand1);
+    auto hand_eval_2 = evaluator.evaluate(hand2);
+
+    ASSERT_TRUE(hand_eval_1 > hand_eval_2);  
+}

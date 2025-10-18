@@ -2,6 +2,7 @@
 #define POKER_ENGINE_EVALUATOR_HAND_RANK_HPP
 
 #include <vector>
+#include <cstdint>
 #include "PokerEngine/core/card.hpp"
 
 namespace PokerEngine::Evaluator {
@@ -22,9 +23,12 @@ enum class HandType {
 struct HandRank {
     HandType handtype;
     std::vector<PokerEngine::Core::Card> besthand;
-    
-    auto operator<=>(const HandRank&) const = default;
+    uint64_t score = 0;             // numerical value for comparison
 };
+
+constexpr inline auto operator<=>(const HandRank& a, const HandRank& b) {
+    return a.score <=> b.score;
+}
 
 }
 

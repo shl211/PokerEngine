@@ -18,6 +18,17 @@ public:
 };
 
 namespace {
+    uint64_t compute_score(HandType handtype, const std::vector<Core::Card>& besthand) {
+        uint64_t s = static_cast<uint64_t>(handtype) << 20; // top bits = hand type
+
+        for (int i = 0; i < besthand.size() && i < 5; ++i) {
+            int r = static_cast<int>(besthand[i].rank());
+            s |= static_cast<uint64_t>(r) << (16 - i * 4);  // 4 bits per rank
+        }
+
+        return s;
+    }
+
     //Pick N cards of a specific rank (any suit)
     auto pick_rank(detail::HandMask mask, int rank, int n) {
         std::vector<Core::Card> result;
@@ -62,7 +73,7 @@ namespace {
             best_hand.push_back(Core::Card{detail::rank_from_index(rank - 2), static_cast<Core::Suit>(flush_suit)});
         }
 
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     // Returns vector of {rank_index, count}, sorted by count descending, then rank descending
@@ -86,7 +97,7 @@ namespace {
         std::vector<Core::Card> best_hand = pick_rank(mask, quad.first + 2, 4);
         auto kicker = pick_highest(best_hand, mask, 1);
         best_hand.insert(best_hand.end(), kicker.begin(), kicker.end());
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_full_house(detail::HandMask mask, const std::vector<std::pair<int,int>>& sorted_counts) {
@@ -101,7 +112,7 @@ namespace {
         auto pair_cards = pick_rank(mask, pair.first + 2, 2);
         best_hand.insert(best_hand.end(), pair_cards.begin(), pair_cards.end());
 
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_flush(int flush_suit, detail::RankMask flush_mask) {
@@ -117,7 +128,7 @@ namespace {
         }
 
         if (best_hand.empty()) return std::nullopt;
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_straight(detail::HandMask mask, const detail::StraightResult& straight_res) {
@@ -140,7 +151,7 @@ namespace {
         }
 
         if (best_hand.empty()) return std::nullopt;
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_three_of_a_kind(detail::HandMask mask, const std::vector<std::pair<int,int>>& sorted_counts) {
@@ -152,7 +163,7 @@ namespace {
         auto kickers = pick_highest(best_hand, mask, 2);
         best_hand.insert(best_hand.end(), kickers.begin(), kickers.end());
 
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_two_pair(detail::HandMask mask, const std::vector<std::pair<int,int>>& sorted_counts) {
@@ -170,7 +181,7 @@ namespace {
         auto kicker = pick_highest(best_hand, mask, 1);
         best_hand.insert(best_hand.end(), kicker.begin(), kicker.end());
 
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 
     inline std::optional<HandRank> check_one_pair(detail::HandMask mask, const std::vector<std::pair<int,int>>& sorted_counts) {
@@ -182,7 +193,7 @@ namespace {
         auto kickers = pick_highest(best_hand, mask, 3);
         best_hand.insert(best_hand.end(), kickers.begin(), kickers.end());
 
-        return HandRank{hand_type, best_hand};
+        return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
     }
 }
 
@@ -213,7 +224,7 @@ HandRank HandEvaluator::evaluate(const std::vector<Core::Card>& cards) {
     //Otherwise return high card
     hand_type = HandType::HighCard;
     best_hand = pick_highest(best_hand, mask, 5);
-    return {hand_type, best_hand};
+    return HandRank{hand_type, best_hand, compute_score(hand_type, best_hand)};
 }
 }
 
