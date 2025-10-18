@@ -33,11 +33,11 @@ namespace {
     constexpr inline Core::Rank rank_from_index(int index) noexcept {
         return static_cast<Core::Rank>(index + 2);
     }
+    
+    constexpr HandMask SUIT_MASK = 0x1FFF;
+    constexpr RankMask STRAIGHT_MASK = 0b11111U;
+    constexpr RankMask ACE_LOW_STRAIGHT_MASK = 0b1000000001111U;
 }
-
-constexpr HandMask SUIT_MASK = 0x1FFF;
-constexpr HandMask STRAIGHT_MASK = 0b11111U;
-constexpr uint16_t ACE_LOW_STRAIGHT_MASK = 0b1000000001111U;
 
 struct StraightResult {
     bool is_straight;
@@ -60,7 +60,7 @@ constexpr inline HandMask cards_bitmask(const std::vector<Card>& cards) noexcept
     return mask;
 }
 
-constexpr inline HandMask suit_mask(HandMask hand_mask, Core::Suit suit) noexcept {
+constexpr inline RankMask suit_mask(HandMask hand_mask, Core::Suit suit) noexcept {
     return (hand_mask >> (static_cast<HandMask>(suit) * 13)) & SUIT_MASK;
 }
 
@@ -114,6 +114,21 @@ inline std::vector<Card> mask_cards(HandMask mask) {
     }
     return cards;
 }
+
+inline std::pair<int, HandMask> find_flush(HandMask hand_mask) noexcept {
+    for (int s = 0; s < 4; ++s) {
+        HandMask sm = suit_mask(hand_mask, static_cast<Core::Suit>(s));
+        // Count number of cards in this suit
+        int count = 0;
+        HandMask temp = sm;
+        while (temp) { count += temp & 1; temp >>= 1; }
+
+        if (count >= 5) {
+            return {s, sm};  // flush found
+        }
+    }
+    return {-1, 0};  // no flush
+};
 
 }
 
