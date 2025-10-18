@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 
 #include "PokerEngine/evaluator/detail/bit_mask.hpp"
 
@@ -6,6 +7,7 @@ namespace EvalDetail = PokerEngine::Evaluator::detail;
 using EvalDetail::HandMask;
 using namespace PokerEngine::Core;
 using namespace PokerEngine::Core::literals;
+using PokerEngine::Core::operator==;
 
 // Simple helper to count set bits in HandMask
 constexpr int count_bits(HandMask mask) noexcept {
