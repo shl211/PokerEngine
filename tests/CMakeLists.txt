@@ -2,6 +2,7 @@ enable_testing()
 
 file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/*.cpp"
 )
 
 add_executable(PokerEngine_tests
