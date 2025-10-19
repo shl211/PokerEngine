@@ -23,6 +23,8 @@ public:
     void shuffle();
     void shuffle(unsigned seed);
     void reset() noexcept { cards_ = original_cards_; }
+    void remove(const Card& c);
+    void remove(const std::vector<Card>& c);
     
     Card draw();
     Card peek();
@@ -82,6 +84,17 @@ std::vector<Card> Deck::draw(size_t n) {
     std::vector<Card> drawn(start, cards_.end());
     cards_.erase(start, cards_.end());
     return drawn;
+}
+
+void Deck::remove(const Card& c) {
+    auto it = std::ranges::find(cards_, c);
+    if (it != cards_.end()) cards_.erase(it);
+}
+
+void Deck::remove(const std::vector<Card>& to_remove) {
+    std::erase_if(cards_, [&](const Card& card) {
+        return std::ranges::find(to_remove, card) != to_remove.end();
+    });
 }
 }
 
