@@ -25,6 +25,7 @@ public:
     void reset() noexcept { cards_ = original_cards_; }
     
     Card draw();
+    Card peek();
     std::vector<Card> draw(size_t n);
 
     size_t size() const noexcept { return cards_.size(); }
@@ -63,6 +64,15 @@ Card Deck::draw() {
     return selected;
 }
 
+Card Deck::peek() {
+    if (cards_.empty()) {
+        throw std::out_of_range("Cannot draw from empty deck");
+    }
+
+    auto selected = cards_.back();
+    return selected;
+}
+
 std::vector<Card> Deck::draw(size_t n) {
     if (n > cards_.size()) {
         throw std::out_of_range("Cannot draw more cards than are in the deck");
@@ -73,7 +83,6 @@ std::vector<Card> Deck::draw(size_t n) {
     cards_.erase(start, cards_.end());
     return drawn;
 }
-
 }
 
 #endif
