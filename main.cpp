@@ -4,6 +4,7 @@
 #include "PokerEngine/core/range.hpp"
 #include "PokerEngine/core/factory/deck_factory.hpp"
 #include "PokerEngine/simulator/poker_simulator.hpp"
+#include "PokerEngine/simulator/monte_carlo_strategy.hpp"
 
 int main() {
     using namespace PokerEngine;
@@ -16,10 +17,12 @@ int main() {
     std::vector<Core::Card> my_hand{"Ts"_c, "Tc"_c};
     std::vector<Core::Card> board{"5d"_c, "6s"_c, "Jh"_c, "4c"_c};
 
+    Core::Range my_range{};
+    my_range.addCombo(my_hand[0],my_hand[1],1.0);
 
     PokerEngine::Simulator::PokerSimulator sim{
-        Core::Hand{my_hand},
-        board,
+        my_range,
+        Core::Board{board},
         1,
         deck
     };
@@ -28,7 +31,8 @@ int main() {
     opponent_range.addCombo("Ah"_c, "Kh"_c);
 
     int iterations = 100000;
-    auto res = sim.simulate({opponent_range}, iterations);
+    Simulator::MonteCarloNLHStrategy solver{};
+    auto res = sim.simulate(solver, {opponent_range}, iterations);
 
     auto end = high_resolution_clock::now();  // end timer
     duration<double> elapsed = end - start;

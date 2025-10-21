@@ -13,7 +13,7 @@ namespace PokerEngine::Evaluator {
 
 class HandEvaluator {
 public:
-    HandRank evaluate(const std::vector<Core::Card>&);
+    HandRank evaluate(const std::vector<Core::Card>&) const;
 
 };
 
@@ -197,7 +197,7 @@ namespace {
     }
 }
 
-HandRank HandEvaluator::evaluate(const std::vector<Core::Card>& cards) {
+HandRank HandEvaluator::evaluate(const std::vector<Core::Card>& cards) const {
     using namespace PokerEngine::Evaluator::detail;
 
     //flush check
