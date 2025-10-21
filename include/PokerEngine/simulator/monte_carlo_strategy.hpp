@@ -55,6 +55,17 @@ namespace {
 
         return opp_hands;
     }
+
+    Core::Hand sampleHandFromRange(Core::Range range,
+                                Core::Deck& deck, std::mt19937& rng) {
+        auto combo_opt = range.sample(rng);
+        if(!combo_opt.has_value())
+            throw std::runtime_error("No available combo for opponent");
+
+        auto combo = *combo_opt;
+        deck.remove({combo.c1, combo.c2});
+        return Core::Hand{{combo.c1, combo.c2}};
+    }
     
     Core::Board completeBoard(const std::vector<Core::Card>& curr_board, int total_cards_on_board,
                                             Core::Deck& deck) 
@@ -94,15 +105,34 @@ namespace {
             Core::Deck sim_deck = deck; // copy deck
             sim_deck.shuffle();
 
-            // Sample hero hand
-            auto hero_combo_opt = my_range.sample(rng);
-            if (!hero_combo_opt) throw std::runtime_error("No available combo for hero");
-            auto hero_combo = *hero_combo_opt;
-            Core::Hand hero_hand{{hero_combo.c1, hero_combo.c2}};
-            sim_deck.remove(hero_combo.c1);
-            sim_deck.remove(hero_combo.c2);
+            Core::Hand hero_hand = sampleHandFromRange(my_range,deck,rng);
 
-            auto opp_hands = sampleCardsFromRange(num_opponents, opponent_ranges, sim_deck, rng);
+            // Copy opponent ranges and remove blocked cards
+            std::vector<Core::Range> opp_ranges = opponent_ranges;
+            for (auto& r : opp_ranges)
+                r.removeBlocked(hero_hand.get());
+
+            std::vector<Core::Hand> opp_hands;
+            opp_hands.reserve(num_opponents);
+
+            for (int i = 0; i < num_opponents; ++i) {
+                auto& r = opp_ranges[i];
+
+                auto combo_opt = r.sample(rng);
+                if (!combo_opt) throw std::runtime_error("No available combo for opponent");
+                auto combo = *combo_opt;
+                Core::Hand hand{{combo.c1, combo.c2}};
+                opp_hands.push_back(hand);
+
+                sim_deck.remove(combo.c1);
+                sim_deck.remove(combo.c2);
+
+                // Remove these blockers from future players 
+                for (int j = i + 1; j < num_opponents; ++j) {
+                    opp_ranges[j].removeBlocked({combo.c1,combo.c2});
+                }
+            }
+
             auto sim_board = completeBoard(community.get(), MAX_BOARD_SIZE_NLH, sim_deck);
             auto hero_cards = combineCards(hero_hand.get(), sim_board.get());
             auto hero_rank = eval_.evaluate(hero_cards);
