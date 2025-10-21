@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include "PokerEngine/core/card.hpp"
 #include "PokerEngine/core/range.hpp"
 #include "PokerEngine/core/factory/deck_factory.hpp"
@@ -7,6 +8,9 @@
 int main() {
     using namespace PokerEngine;
     using namespace PokerEngine::Core::literals;
+    using namespace std::chrono;
+
+    auto start = high_resolution_clock::now();
 
     auto deck = Core::Factory::DeckFactory::createStandardDeck();
     std::vector<Core::Card> my_hand{"Ts"_c, "Tc"_c};
@@ -23,10 +27,15 @@ int main() {
     Core::Range opponent_range{};
     opponent_range.addCombo("Ah"_c, "Kh"_c);
 
-    auto res = sim.simulate({opponent_range},100000);
+    int iterations = 100000;
+    auto res = sim.simulate({opponent_range}, iterations);
 
-    std::cout << "Monte Carlo Sim Results: \n"
-        << "Hero: " << res.win << "\n" 
-        << "Villain: " << res.loss << "\n" 
-        << "Tie: " << res.tie << "\n";
+    auto end = high_resolution_clock::now();  // end timer
+    duration<double> elapsed = end - start;
+
+    std::cout << "Monte Carlo Sim Results (" << iterations << " iterations):\n"
+            << "Hero win: " << res.win << "\n"
+            << "Villain win: " << res.loss << "\n"
+            << "Tie: " << res.tie << "\n"
+            << "Elapsed: " << elapsed.count() << "s\n";
 }
