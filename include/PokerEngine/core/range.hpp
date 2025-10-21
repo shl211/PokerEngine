@@ -54,6 +54,8 @@ void Range::addCombo(Card c1, Card c2, double weight) {
     }
 }
 
+//TODO: this needs to be more efficient -> don't actually erase, just mark as erased
+//The search is O(N)
 void Range::removeBlocked(const std::vector<Card>& known) {
     std::erase_if(combos_, 
         [&](const Combo& c) {
@@ -63,7 +65,7 @@ void Range::removeBlocked(const std::vector<Card>& known) {
     );
 }
 
-//TODO: replace with prefix sums
+//TODO: replace with prefix sums and O(logN) sampling
 std::optional<Combo> Range::sample(std::mt19937& rng) const {
     if(combos_.empty()) return std::nullopt;
 
