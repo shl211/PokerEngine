@@ -6,6 +6,8 @@
 
 #include "PokerEngine/core/deck.hpp"
 #include "PokerEngine/core/range.hpp"
+#include "PokerEngine/core/hand.hpp"
+#include "PokerEngine/core/board.hpp"
 #include "PokerEngine/evaluator/hand_evaluator.hpp"
 
 namespace PokerEngine::Simulator {
@@ -24,7 +26,7 @@ void printCards(const std::vector<Core::Card>& cards) {
 class PokerSimulator {    
 public:
     PokerSimulator(
-        const std::vector<Core::Card>& my_hand, 
+        const Core::Hand& my_hand, 
         const std::vector<Core::Card>& community_cards,
         int num_opponents,
         Core::Deck deck
@@ -47,11 +49,52 @@ public:
 
 private:
     Core::Deck deck_;
-    std::vector<Core::Card> my_hand_;
+    Core::Hand my_hand_;
     std::vector<Core::Card> community_cards_;
     int num_opponents_;
     Evaluator::HandEvaluator eval_{};
 };
+
+namespace {
+    constexpr int MAX_BOARD_SIZE_NLH = 5;
+
+    std::vector<Core::Hand> sampleCardsFromRange(int num_players, std::vector<Core::Range> ranges,
+                                                    Core::Deck& deck, std::mt19937& rng) 
+    {
+        std::vector<Core::Hand> opp_hands;
+        opp_hands.reserve(num_players);
+        for(const auto& range : ranges) {
+            auto combo_opt = range.sample(rng);
+            if(!combo_opt.has_value())
+                throw std::runtime_error("No available combo for opponent");
+
+            auto combo = *combo_opt;
+            Core::Hand hand{{combo.c1, combo.c2}};
+            opp_hands.push_back(std::move(hand));
+
+            deck.remove(combo.c1);
+            deck.remove(combo.c2);
+        }
+
+        return opp_hands;
+    }
+    
+    Core::Board completeBoard(const std::vector<Core::Card>& curr_board, int total_cards_on_board,
+                                            Core::Deck& deck) 
+    {
+        Core::Board sim_board{curr_board};
+        auto remaining = total_cards_on_board - curr_board.size();
+        auto drawn = deck.draw(remaining);
+        sim_board.add(std::move(drawn));
+        return sim_board;
+    }
+
+    std::vector<Core::Card> combineCards(const std::vector<Core::Card>& lhs, const std::vector <Core::Card>& rhs) {
+        std::vector<Core::Card> comb = lhs;
+        comb.insert(comb.end(), rhs.begin(), rhs.end());
+        return comb;
+    }
+}
 
 MonteCarloResult PokerSimulator::simulate(
     const std::vector<Core::Range>& opponent_ranges,
@@ -69,38 +112,19 @@ MonteCarloResult PokerSimulator::simulate(
         sim_deck.shuffle();
 
         // Remove my hand + community cards from deck
-        sim_deck.remove(my_hand_);
+        sim_deck.remove(my_hand_.get());
         sim_deck.remove(community_cards_);
 
-        // Sample opponent hands
-        std::vector<std::vector<Core::Card>> opp_hands;
-        for(const auto& range : opponent_ranges) {
-            auto combo_opt = range.sample(rng);
-            if(!combo_opt.has_value())
-                throw std::runtime_error("No available combo for opponent");
-
-            auto combo = *combo_opt;
-            opp_hands.push_back({combo.c1, combo.c2});
-
-            sim_deck.remove(combo.c1);
-            sim_deck.remove(combo.c2);
-        }
-
-        // Complete board if needed
-        std::vector<Core::Card> sim_board = community_cards_;
-        auto remaining = 5 - community_cards_.size();
-        auto drawn = sim_deck.draw(remaining);
-        sim_board.insert(sim_board.end(), drawn.begin(), drawn.end());
-        // Combine my hand + board
-        std::vector<Core::Card> my_cards = my_hand_;
-        my_cards.insert(my_cards.end(), sim_board.begin(), sim_board.end());
+        std::vector<Core::Hand> opp_hands = sampleCardsFromRange(num_opponents_, opponent_ranges, sim_deck, rng);
+        Core::Board sim_board = completeBoard(community_cards_,MAX_BOARD_SIZE_NLH,sim_deck);
+        std::vector<Core::Card> my_cards = combineCards(my_hand_.get(), sim_board.get());
         auto my_rank = eval_.evaluate(my_cards);
-        
+
         // Evaluate opponents
         std::vector<Evaluator::HandRank> opp_ranks;
         for(auto& h : opp_hands) {
-            h.insert(h.end(), sim_board.begin(), sim_board.end());
-            opp_ranks.push_back(eval_.evaluate(h));
+            h.add(sim_board.get());
+            opp_ranks.push_back(eval_.evaluate(h.get()));
         }
         
         // Determine best score
@@ -127,7 +151,6 @@ MonteCarloResult PokerSimulator::simulate(
     return result;
 }
 
-// Overload without seed
 MonteCarloResult PokerSimulator::simulate(
     const std::vector<Core::Range>& opponent_ranges,
     int iterations

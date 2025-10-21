@@ -14,7 +14,7 @@ int main() {
 
 
     PokerEngine::Simulator::PokerSimulator sim{
-        my_hand,
+        Core::Hand{my_hand},
         board,
         1,
         deck
