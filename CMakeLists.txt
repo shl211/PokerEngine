@@ -11,13 +11,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Fetch external libraries
 include(FetchContent)
 
+# Fetch cxxopts for cli parsing
+FetchContent_Declare(
+    cxxopts
+    GIT_REPOSITORY https://github.com/jarro2783/cxxopts.git
+    GIT_TAG v3.1.0
+)
+
 # Fetch GoogleTest
 FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.13.0.zip
 )
 
-FetchContent_MakeAvailable(googletest)
+FetchContent_MakeAvailable(cxxopts googletest)
 
 ########################
 # PokerEngine (with source files)
@@ -46,7 +53,7 @@ target_include_directories(PokerEngine
 )
 
 add_executable(app main.cpp)
-target_link_libraries(app PRIVATE PokerEngine)
+target_link_libraries(app PRIVATE cxxopts PokerEngine)
 
 ###################################
 # Enable Tests
