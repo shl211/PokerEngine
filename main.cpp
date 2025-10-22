@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <string>
 #include <vector>
 #include <chrono>
@@ -53,6 +54,11 @@ SimulationStats run_simulation(const std::string& hero_str,
     return { result.win, result.loss, result.tie, elapsed };
 }
 
+void printUsageInfo(const std::string& program_name) {
+    std::cerr << "Usage: " << program_name << " --hero HERO_HAND --villain VILLAIN_HAND --board BOARD --iterations N\n";
+    std::cerr << "Example: ./app --hero AsAd --villain KdKh --board Ad --iterations 100000\n";
+}
+
 int main(int argc, char* argv[]) {
     cxxopts::Options options("PokerSolver", "Equity calculation for Texas No-Limit Hold'em");
 
@@ -63,21 +69,19 @@ int main(int argc, char* argv[]) {
         ("iterations", "Iterations for simulation", cxxopts::value<int>()->default_value("10000"))
         ("h,help", "Print usage");
 
-    auto args = options.parse(argc,argv);
+    auto args = options.parse(argc, argv);
 
     if (args.count("help"))
     {
         std::cout << options.help() << std::endl;
-        std::cerr << "Usage: " << argv[0] << " --hero HERO_HAND --villain VILLAIN_HAND --board BOARD --iterations N\n";
-        std::cerr << "Example: ./app --hero AsAd --villain KdKh --board Ad --iterations 100000\n";
+        printUsageInfo(argv[0]);
         exit(0);
     }
 
     if (!args.count("hero") || !args.count("villain")) {
         std::cerr << "Error: Both --hero and --villain must be provided.\n\n"
                     << options.help() << std::endl;
-        std::cerr << "Usage: " << argv[0] << " --hero HERO_HAND --villain VILLAIN_HAND --board BOARD --iterations N\n";
-        std::cerr << "Example: ./app --hero AsAd --villain KdKh --board Ad --iterations 100000\n";
+        printUsageInfo(argv[0]);
         return 1;
     }
 
