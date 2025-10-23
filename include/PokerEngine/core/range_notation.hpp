@@ -117,30 +117,29 @@ namespace detail {
 
         return tokens;
     }
-}
 
-
-std::vector<Hand> getHandsHelper(const RangeToken& token) {
-    std::vector<Hand> combos;
-    switch(token.type) {
-        case RangeToken::Type::Suited: combos = detail::getSuitedCombos(token.rank1, token.rank2); break;
-        case RangeToken::Type::Offsuit: combos = detail::getOffsuitCombos(token.rank1, token.rank2); break;
-        case RangeToken::Type::Pair: combos = detail::getPairCombos(token.rank1); break;
-        case RangeToken::Type::Normal: combos = detail::getAllNonPairCombos(token.rank1, token.rank2); break;
+    inline std::vector<Hand> getHandsHelper(const RangeToken& token) {
+        std::vector<Hand> combos;
+        switch(token.type) {
+            case RangeToken::Type::Suited: combos = detail::getSuitedCombos(token.rank1, token.rank2); break;
+            case RangeToken::Type::Offsuit: combos = detail::getOffsuitCombos(token.rank1, token.rank2); break;
+            case RangeToken::Type::Pair: combos = detail::getPairCombos(token.rank1); break;
+            case RangeToken::Type::Normal: combos = detail::getAllNonPairCombos(token.rank1, token.rank2); break;
+        }
+        return combos;
     }
-    return combos;
 }
 
-std::vector<Hand> getHands(const std::vector<RangeToken>& tokens) {
+inline std::vector<Hand> getHands(const std::vector<RangeToken>& tokens) {
     std::vector<Hand> combos;
     for(auto& t : tokens) {
-        auto combo = getHandsHelper(t);
+        auto combo = detail::getHandsHelper(t);
         combos.insert(combos.end(), combo.begin(), combo.end());
     }
     return combos;
 }
 
-std::vector<Hand> getHands(const RangeToken& token) {
+inline std::vector<Hand> getHands(const RangeToken& token) {
     std::vector<RangeToken> tokens = detail::expandPlus(token);
     return getHands(tokens);  // call the vector version
 }
