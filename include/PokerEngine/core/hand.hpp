@@ -2,6 +2,7 @@
 #define POKER_ENGINE_CORE_HAND_HPP
 
 #include <vector>
+#include <algorithm>
 
 #include "PokerEngine/core/card.hpp"
 
