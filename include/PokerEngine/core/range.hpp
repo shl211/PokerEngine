@@ -9,6 +9,7 @@
 #include <random>
 
 #include "PokerEngine/core/card.hpp"
+#include "PokerEngine/core/range_notation.hpp"
 
 namespace PokerEngine::Core {
 
@@ -29,9 +30,14 @@ constexpr inline bool operator==(const Combo& lhs, const Combo& rhs) noexcept {
     return lhs.c1 == rhs.c1 && lhs.c2 == rhs.c2;
 }
 
+constexpr inline bool operator<(const Combo& lhs, const Combo& rhs) noexcept {
+    return lhs.c1 < rhs.c1 || (lhs.c1 == rhs.c1 && lhs.c2 < rhs.c2);
+}
+
 class Range {
 public:
     Range() = default;
+    Range(const RangeToken& token);
 
     void addCombo(Card c1, Card c2, double weight = 1.0);
     void removeBlocked(const std::vector<Card>& known);
@@ -51,6 +57,15 @@ void Range::addCombo(Card c1, Card c2, double weight) {
 
     if (std::ranges::find(combos_, combo) == combos_.end()) {
         combos_.push_back(combo);
+    }
+}
+
+Range::Range(const RangeToken& token) {
+    std::vector<Hand> expanded_combos = getHands(token);
+    combos_.reserve(expanded_combos.size());
+
+    for(auto& c : expanded_combos) {
+        combos_.emplace_back(c.get()[0], c.get()[1], 1.0);
     }
 }
 

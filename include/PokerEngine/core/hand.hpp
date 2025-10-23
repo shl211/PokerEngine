@@ -2,6 +2,7 @@
 #define POKER_ENGINE_CORE_HAND_HPP
 
 #include <vector>
+#include <algorithm>
 
 #include "PokerEngine/core/card.hpp"
 
@@ -31,6 +32,23 @@ public:
 private:
     std::vector<Card> hand_; 
 };
+
+inline bool operator<(const Hand& lhs, const Hand& rhs) {
+    auto l = lhs.get();
+    auto r = rhs.get();
+    std::sort(l.begin(), l.end());
+    std::sort(r.begin(), r.end());
+    return l < r; // lexicographical compare
+}
+
+inline bool operator==(const Hand& lhs, const Hand& rhs) {
+    auto l = lhs.get();
+    auto r = rhs.get();
+    //consider caching this in future
+    std::sort(l.begin(), l.end());
+    std::sort(r.begin(), r.end());
+    return l == r;
+}
 
 }
 

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <gtest/gtest.h>
 
 #include "PokerEngine/core/range.hpp"
@@ -73,4 +74,21 @@ TEST(RangeTest, SampleSingleCombo) {
         ASSERT_TRUE(s.has_value());
         EXPECT_EQ(*s, PokerEngine::Core::Combo(a,b,1.0));
     }
+}
+
+TEST(RangeTest, FromToken) {
+    Range r{"AKs"_r};
+    
+    Range expected_range{};
+    expected_range.addCombo("Ad"_c,"Kd"_c);
+    expected_range.addCombo("Ac"_c,"Kc"_c);
+    expected_range.addCombo("Ah"_c,"Kh"_c);
+    expected_range.addCombo("As"_c,"Ks"_c);
+
+    auto combo_from_token = r.combos();
+    auto expected_combos = expected_range.combos();
+    std::sort(combo_from_token.begin(),combo_from_token.end());
+    std::sort(expected_combos.begin(),expected_combos.end());
+
+    ASSERT_EQ(combo_from_token, expected_combos);
 }
