@@ -34,7 +34,15 @@ INSTANTIATE_TEST_SUITE_P(
         RangeLiteralTestCase{.from_literal = "AKs"_r, .expected = {
                                 .rank1 = Rank::Ace, .rank2 = Rank::King, .type = RangeToken::Type::Suited}},
         RangeLiteralTestCase{.from_literal = "AKo"_r, .expected = {
-                                .rank1 = Rank::Ace, .rank2 = Rank::King, .type = RangeToken::Type::Offsuit}}
+                                .rank1 = Rank::Ace, .rank2 = Rank::King, .type = RangeToken::Type::Offsuit}},
+        RangeLiteralTestCase{.from_literal = "TT+"_r, .expected = {
+                                .rank1 = Rank::Ten, .rank2 = Rank::Ten, .type = RangeToken::Type::Pair, .plus = true}},
+        RangeLiteralTestCase{.from_literal = "AQ+"_r, .expected = {
+                                .rank1 = Rank::Ace, .rank2 = Rank::Queen, .type = RangeToken::Type::Normal, .plus = true}},
+        RangeLiteralTestCase{.from_literal = "AQs+"_r, .expected = {
+                                .rank1 = Rank::Ace, .rank2 = Rank::Queen, .type = RangeToken::Type::Suited, .plus = true}},
+        RangeLiteralTestCase{.from_literal = "AQo+"_r, .expected = {
+                                .rank1 = Rank::Ace, .rank2 = Rank::Queen, .type = RangeToken::Type::Offsuit, .plus = true}}
     )
 );
 
