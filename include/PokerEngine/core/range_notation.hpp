@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <ostream>
+#include <stdexcept>
 
 #include "PokerEngine/core/hand.hpp"
 #include "PokerEngine/core/card.hpp"
@@ -104,7 +105,7 @@ namespace detail {
                 tokens.push_back({r, r, RangeToken::Type::Pair, false});
             }
         }
-        // Suited/offsuited: AKs+ -> AKs, AQs, AJs, ATs
+        // Suited/offsuited: ATs+ -> AKs, AQs, AJs, ATs
         else if (token.type == RangeToken::Type::Suited || token.type == RangeToken::Type::Offsuit) {
             Rank r1 = token.rank1;
             for (int r2i = static_cast<int>(token.rank2); r2i >= static_cast<int>(Rank::Two); --r2i) {
@@ -151,7 +152,7 @@ struct RangeNotation {
 namespace literals {
     constexpr RangeToken operator""_r(const char* str, std::size_t size) {
         if (size < 2 || size > 4)
-            throw "Invalid range token length";
+            throw std::invalid_argument("Invalid range token length");
         
         bool has_plus_notation = false;
         if(str[size - 1] == '+') {
@@ -171,7 +172,7 @@ namespace literals {
             else if (str[2] == 'o')
                 type = RangeToken::Type::Offsuit;
             else
-                throw "Invalid suited/offsuit specifier";
+                throw std::invalid_argument("Invalid suited/offsuit specifier");
         }
 
         return RangeToken{.rank1 = r1, .rank2 = r2, .type = type, .plus = has_plus_notation};
