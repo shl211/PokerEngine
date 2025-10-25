@@ -149,6 +149,35 @@ struct RangeNotation {
     std::vector<RangeToken> tokens;
 };
 
+inline RangeToken from_string(const std::string& str) {
+    auto size = str.size();
+    if (size < 2 || size > 4)
+        throw std::invalid_argument("Invalid range token length");
+    
+    bool has_plus_notation = false;
+    if(str[size - 1] == '+') {
+        has_plus_notation = true;
+        --size;
+    }
+
+    Rank r1 = detail::char_to_rank(str[0]);
+    Rank r2 = detail::char_to_rank(str[1]);
+
+    RangeToken::Type type;
+    if (size == 2) {
+        type = (r1 == r2) ? RangeToken::Type::Pair : RangeToken::Type::Normal;
+    } else {
+        if (str[2] == 's')
+            type = RangeToken::Type::Suited;
+        else if (str[2] == 'o')
+            type = RangeToken::Type::Offsuit;
+        else
+            throw std::invalid_argument("Invalid suited/offsuit specifier");
+    }
+
+    return RangeToken{.rank1 = r1, .rank2 = r2, .type = type, .plus = has_plus_notation};
+}
+
 namespace literals {
     constexpr RangeToken operator""_r(const char* str, std::size_t size) {
         if (size < 2 || size > 4)

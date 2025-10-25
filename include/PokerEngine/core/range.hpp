@@ -40,6 +40,7 @@ public:
     Range(const RangeToken& token);
 
     void addCombo(Card c1, Card c2, double weight = 1.0);
+    void addCombo(const RangeToken& token);
     void removeBlocked(const std::vector<Card>& known);
 
     std::optional<Combo> sample(std::mt19937& rng) const;
@@ -51,6 +52,15 @@ private:
     std::vector<Combo> combos_;
 
 };
+
+void Range::addCombo(const RangeToken& token) {
+    std::vector<Hand> expanded_combos = getHands(token);
+    combos_.reserve(combos_.size() + expanded_combos.size());
+
+    for(auto& c : expanded_combos) {
+        combos_.emplace_back(c.get()[0], c.get()[1], 1.0);
+    }
+}
 
 void Range::addCombo(Card c1, Card c2, double weight) {
     Combo combo{c1,c2,weight};

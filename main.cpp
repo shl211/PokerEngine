@@ -24,20 +24,11 @@ struct SimulationStats {
     double elapsed;
 };
 
-SimulationStats run_simulation(const Hand& hero_str,
-                                const Hand& villain_str,
-                                const Board& board_str,
+SimulationStats run_simulation(const Range& hero_range,
+                                const Range& villain_range,
+                                const Board& board,
                                 int iterations)
 {
-    Hand hero_cards{hero_str};
-    Hand villain_cards{villain_str};
-    Board board{board_str};
-
-    Range hero_range;
-    hero_range.addCombo(hero_cards.get()[0], hero_cards.get()[1]);
-    Range villain_range;
-    villain_range.addCombo(villain_cards.get()[0], villain_cards.get()[1]);
-
     auto deck = Factory::DeckFactory::createStandardDeck();
     Simulator::PokerSimulator sim{ hero_range, Board{board}, 1, deck };
     Simulator::MonteCarloNLHStrategy solver{};
@@ -51,24 +42,39 @@ SimulationStats run_simulation(const Hand& hero_str,
     return { result.win, result.loss, result.tie, elapsed };
 }
 
-PokerEngine::Core::Hand parse_hand(const std::string& s) {
+Hand parse_hand(const std::string& s) {
     if (s.empty()) return {}; // empty hand
-    PokerEngine::Core::Hand h;
+    Hand h;
     if (s.size() % 2 != 0) throw std::invalid_argument("Invalid hand string");
     for (size_t i = 0; i < s.size(); i += 2) {
-        h.add(PokerEngine::Core::Card(s.substr(i, 2)));
+        h.add(Card(s.substr(i, 2)));
     }
     return h;
 }
 
-PokerEngine::Core::Board parse_board(const std::string& s) {
+Board parse_board(const std::string& s) {
     if (s.empty()) return {}; // empty board
-    PokerEngine::Core::Board h;
+    Board h;
     if (s.size() % 2 != 0) throw std::invalid_argument("Invalid hand string");
     for (size_t i = 0; i < s.size(); i += 2) {
-        h.add(PokerEngine::Core::Card(s.substr(i, 2)));
+        h.add(Card(s.substr(i, 2)));
     }
     return h;
+}
+
+Range parse_range(const std::string& s) {
+    Range range;
+    if (s.empty()) return range;
+
+    std::stringstream ss(s);
+    std::string token_str;
+    while (std::getline(ss, token_str, ',')) {
+        token_str.erase(std::remove_if(token_str.begin(), token_str.end(), ::isspace), token_str.end());
+        if (!token_str.empty()) {
+            range.addCombo(from_string(token_str));
+        }
+    }
+    return range;
 }
 
 void printUsageInfo(const std::string& program_name) {
@@ -83,6 +89,8 @@ int main(int argc, char* argv[]) {
         ("hero", "Hero cards", cxxopts::value<std::string>())
         ("villain", "Villain cards", cxxopts::value<std::string>())
         ("board", "Cards on board", cxxopts::value<std::string>()->default_value(""))
+        ("hero-range", "Hero range e.g. TT,AT+", cxxopts::value<std::string>())
+        ("villain-range", "Villain range e.g. TT,AT+", cxxopts::value<std::string>())
         ("iterations", "Iterations for simulation", cxxopts::value<int>()->default_value("10000"))
         ("h,help", "Print usage");
 
@@ -95,21 +103,39 @@ int main(int argc, char* argv[]) {
         exit(0);
     }
 
-    if (!args.count("hero") || !args.count("villain")) {
-        std::cerr << "Error: Both --hero and --villain must be provided.\n\n"
+    bool hero_defined_once = args.count("hero") ^ args.count("hero-range");
+    bool villain_defined_once = args.count("villain") ^ args.count("villain-range");
+
+    if (!hero_defined_once || !villain_defined_once) {
+        std::cerr << "Error: Either --hero or --hero-range must be provided, "
+                    << "and either --villain or --villain-range must be provided.\n\n"
                     << options.help() << std::endl;
         printUsageInfo(argv[0]);
         return 1;
     }
 
-    Hand hero_str = parse_hand(args["hero"].as<std::string>());
-    Hand villain_str = parse_hand(args["villain"].as<std::string>());
-    Board board_str = parse_board(args["board"].as<std::string>());
+    Range hero_range{};
+    Range villain_range{};
 
+    if(args.count("hero")) {
+        Hand hero_cards = parse_hand(args["hero"].as<std::string>());
+        hero_range.addCombo(hero_cards.get()[0], hero_cards.get()[1]);
+    } else {
+        hero_range = parse_range(args["hero-range"].as<std::string>());
+    }
+
+    if(args.count("villain")) {
+        Hand villain_cards = parse_hand(args["villain"].as<std::string>());
+        villain_range.addCombo(villain_cards.get()[0], villain_cards.get()[1]);
+    } else {
+        villain_range = parse_range(args["villain-range"].as<std::string>());
+    }
+
+    Board board = parse_board(args["board"].as<std::string>());
     int iterations = args["iterations"].as<int>();
 
     try {
-        auto stats = run_simulation(hero_str, villain_str, board_str, iterations);
+        auto stats = run_simulation(hero_range, villain_range, board, iterations);
 
         std::cout << std::fixed << std::setprecision(4);
         std::cout << "=== Monte Carlo Simulation ===\n";
