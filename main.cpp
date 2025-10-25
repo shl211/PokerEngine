@@ -24,17 +24,14 @@ struct SimulationStats {
     double elapsed;
 };
 
-SimulationStats run_simulation(const std::string& hero_str,
-                                const std::string& villain_str,
-                                const std::string& board_str,
+SimulationStats run_simulation(const Hand& hero_str,
+                                const Hand& villain_str,
+                                const Board& board_str,
                                 int iterations)
 {
-    Hand hero_cards{{ Card(hero_str.substr(0,2)), Card(hero_str.substr(2,2)) }};
-    Hand villain_cards{{ Card(villain_str.substr(0,2)), Card(villain_str.substr(2,2)) }};
-
-    Board board;
-    for (size_t i = 0; i < board_str.size(); i += 2)
-        board.add({ Card(board_str.substr(i,2)) });
+    Hand hero_cards{hero_str};
+    Hand villain_cards{villain_str};
+    Board board{board_str};
 
     Range hero_range;
     hero_range.addCombo(hero_cards.get()[0], hero_cards.get()[1]);
@@ -52,6 +49,26 @@ SimulationStats run_simulation(const std::string& hero_str,
     double elapsed = std::chrono::duration<double>(end - start).count();
 
     return { result.win, result.loss, result.tie, elapsed };
+}
+
+PokerEngine::Core::Hand parse_hand(const std::string& s) {
+    if (s.empty()) return {}; // empty hand
+    PokerEngine::Core::Hand h;
+    if (s.size() % 2 != 0) throw std::invalid_argument("Invalid hand string");
+    for (size_t i = 0; i < s.size(); i += 2) {
+        h.add(PokerEngine::Core::Card(s.substr(i, 2)));
+    }
+    return h;
+}
+
+PokerEngine::Core::Board parse_board(const std::string& s) {
+    if (s.empty()) return {}; // empty board
+    PokerEngine::Core::Board h;
+    if (s.size() % 2 != 0) throw std::invalid_argument("Invalid hand string");
+    for (size_t i = 0; i < s.size(); i += 2) {
+        h.add(PokerEngine::Core::Card(s.substr(i, 2)));
+    }
+    return h;
 }
 
 void printUsageInfo(const std::string& program_name) {
@@ -85,9 +102,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string hero_str = args["hero"].as<std::string>();
-    std::string villain_str = args["villain"].as<std::string>();
-    std::string board_str = args["board"].as<std::string>();
+    Hand hero_str = parse_hand(args["hero"].as<std::string>());
+    Hand villain_str = parse_hand(args["villain"].as<std::string>());
+    Board board_str = parse_board(args["board"].as<std::string>());
 
     int iterations = args["iterations"].as<int>();
 

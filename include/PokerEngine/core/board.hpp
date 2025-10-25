@@ -17,8 +17,8 @@ public:
     void add(const std::vector<Card>& c) { cards_.insert(cards_.end(), c.begin(), c.end()); }
     size_t size() const { return cards_.size(); }
 
-    const std::vector<Card>& get() { return cards_; };
-    const std::vector<Card>& get() const { return cards_; };
+    const std::vector<Card>& get() { return cards_; }
+    const std::vector<Card>& get() const { return cards_; }
 
 private:
     std::vector<Core::Card> cards_;
