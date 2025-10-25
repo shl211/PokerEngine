@@ -12,8 +12,20 @@ namespace PokerEngine::Core {
 class Card {
 
 public:
+    /**
+    * @brief Defaults to Ace of Spades
+    */
     constexpr Card() noexcept : rank_(Rank::Ace), suit_(Suit::Spades) {}
+    /**
+     * @brief Construct card from rank and suit
+     * @param Rank enum of rank
+     * @param Suit enum of suit
+     */
     constexpr Card(Rank r, Suit s) noexcept : rank_(r), suit_(s) {};
+    /**
+     * @brief Construct card from standard poker notation e.g. Ad = Ace of Diamonds
+     * @param Standard poker notation for cards
+     */
     constexpr explicit Card(std::string_view s) {
         if(s.length() != 2) throw std::invalid_argument("Invalid card string, expecting standard notation e.g. Kh (King of Hearts)");
         rank_ = detail::char_to_rank(s[0]);
