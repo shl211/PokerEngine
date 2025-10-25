@@ -105,7 +105,7 @@ namespace {
             Core::Deck sim_deck = deck; // copy deck
             sim_deck.shuffle();
 
-            Core::Hand hero_hand = sampleHandFromRange(my_range,deck,rng);
+            Core::Hand hero_hand = sampleHandFromRange(my_range,sim_deck,rng);
 
             // Copy opponent ranges and remove blocked cards
             std::vector<Core::Range> opp_ranges = opponent_ranges;
