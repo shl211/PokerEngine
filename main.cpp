@@ -55,7 +55,7 @@ Hand parse_hand(const std::string& s) {
 Board parse_board(const std::string& s) {
     if (s.empty()) return {}; // empty board
     Board h;
-    if (s.size() % 2 != 0) throw std::invalid_argument("Invalid hand string");
+    if (s.size() % 2 != 0) throw std::invalid_argument("Invalid board string");
     for (size_t i = 0; i < s.size(); i += 2) {
         h.add(Card(s.substr(i, 2)));
     }
@@ -78,8 +78,9 @@ Range parse_range(const std::string& s) {
 }
 
 void printUsageInfo(const std::string& program_name) {
-    std::cerr << "Usage: " << program_name << " --hero HERO_HAND --villain VILLAIN_HAND --board BOARD --iterations N\n";
-    std::cerr << "Example: ./app --hero AsAd --villain KdKh --board Ad --iterations 100000\n";
+    std::cerr << "Usage: " << program_name << " [--hero HERO_HAND | --hero-range HERO_RANGE] [--villain VILLAIN_HAND | --villain-range VILLAIN_RANGE] --board BOARD --iterations N\n";
+    std::cerr << "Example (single hands): ./app --hero AsAd --villain KdKh --board Ad --iterations 100000\n";
+    std::cerr << "Example (ranges): ./app --hero-range \"AsAd,AcAh\" --villain-range \"KdKh,KcKs\" --board Ad --iterations 100000\n";
 }
 
 int main(int argc, char* argv[]) {
