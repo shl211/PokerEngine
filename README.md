@@ -12,3 +12,5 @@ make
 ```
 
 `./app` for application, `ctest` for tests.
+
+To generate the documentation, navigate to `docs/` and run `doxygen`.
