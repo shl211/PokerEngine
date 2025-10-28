@@ -13,22 +13,29 @@ public:
     Pot() = default;
 
     void addContribution(PlayerId id, int chips);
-    int getContribution(PlayerId id);
+    int getContribution(PlayerId id) const;
     int getTotal() const;
     int getWinningsForPlayer(PlayerId id);
 
     bool empty() { return contributions_.empty() || getTotal() == 0; }
-    void clear() { contributions_.clear(); }
+    void clear() { 
+        contributions_.clear();
+        pot_total_ = 0;
+    }
 
 private:
     std::unordered_map<PlayerId, int> contributions_;
+    int pot_total_ = 0;
+
+    void removeContribution(PlayerId id, int chips_to_remove);
 };
 
 void Pot::addContribution(PlayerId id, int chips) {
     contributions_[id] += chips;
+    pot_total_ += chips;
 }
 
-int Pot::getContribution(PlayerId id) {
+int Pot::getContribution(PlayerId id) const {
     int contribution = 0;
     if (auto it = contributions_.find(id); it != contributions_.end()) {
         contribution = it->second;
@@ -37,9 +44,16 @@ int Pot::getContribution(PlayerId id) {
 }
 
 int Pot::getTotal() const {
-    return std::accumulate(contributions_.begin(),contributions_.end(),0,
-        [](int sum, const auto& it) { return sum += it.second; }
-    );
+    return pot_total_;
+}
+
+void Pot::removeContribution(PlayerId id, int chips_to_remove) {
+    if(contributions_.contains(id)) {
+        int contribution = contributions_[id];
+        int to_remove = std::min(chips_to_remove, contribution);
+        contributions_[id] -= to_remove;
+        pot_total_ -= to_remove;
+    }
 }
 
 /**
@@ -48,12 +62,12 @@ int Pot::getTotal() const {
  */
 int Pot::getWinningsForPlayer(PlayerId id) {
     int player_max_winning_per_player = contributions_[id];
-    contributions_[id] = 0;
+    removeContribution(id, player_max_winning_per_player);
     int total = player_max_winning_per_player;
     for(auto [pid, chips] : contributions_) {
         if(pid != id) {
-            int winnings_from_pid = chips < player_max_winning_per_player ? chips : player_max_winning_per_player;
-            contributions_[pid] -= winnings_from_pid;
+            int winnings_from_pid = std::min(chips, player_max_winning_per_player);
+            removeContribution(pid, winnings_from_pid);
             total += winnings_from_pid;
         }
     }
