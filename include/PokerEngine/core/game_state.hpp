@@ -5,14 +5,16 @@
 
 #include "PokerEngine/core/board.hpp"
 #include "PokerEngine/core/pot.hpp"
+#include "PokerEngine/core/deck.hpp"
 #include "PokerEngine/core/player_state.hpp"
 
 namespace PokerEngine::Core {
 
 struct GameState {
     std::vector<PlayerState> players;
-    Board communityCards;
+    Board board;
     Pot pot;
+    Deck deck;
 };
 
 }

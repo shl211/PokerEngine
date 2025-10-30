@@ -9,6 +9,8 @@
 #include "PokerEngine/core/range.hpp"
 #include "PokerEngine/core/board.hpp"
 #include "PokerEngine/core/deck.hpp"
+#include "PokerEngine/core/game_state.hpp"
+#include "PokerEngine/core/player_state.hpp"
 #include "PokerEngine/evaluator/hand_evaluator.hpp"
 #include "PokerEngine/simulator/sim_result.hpp"
 
@@ -94,63 +96,73 @@ namespace {
         unsigned seed
     ) const
     {
+        if(opponent_ranges.size() != static_cast<size_t>(num_opponents))
+            throw std::invalid_argument("Opponent ranges size does not match num_opponents");
+
         SimResult result{};
         std::mt19937 rng(seed);
         deck.remove(community.get());
 
-        if(opponent_ranges.size() != static_cast<size_t>(num_opponents))
-            throw std::invalid_argument("Opponent ranges size does not match num_opponents");
+        std::vector<Core::PlayerState> players;
+        Core::PlayerState hero {.id = 0, .stack{Core::Stack{100}}, .holeCards{}, .hasFolded = false, .isAllIn = false, .range{my_range}};
+        players.push_back(std::move(hero));
+        for(int i = 0; i < num_opponents; ++i) {
+            Core::PlayerState p {.id = i + 1, .stack{Core::Stack{100}}, .holeCards{}, .hasFolded = false, .isAllIn = false, .range{opponent_ranges[i]}};
+            players.push_back(std::move(p));
+        }
+
+        Core::GameState base_state {.players{std::move(players)}, .board{community}, .pot{}, .deck = deck};
 
         for (int i = 0; i < iterations; ++i) {
-            Core::Deck sim_deck = deck; // copy deck
-            sim_deck.shuffle();
+            Core::GameState sim_state = base_state; //copy state
+            sim_state.deck.shuffle();
 
-            Core::Hand hero_hand = sampleHandFromRange(my_range,sim_deck,rng);
-
-            // Copy opponent ranges and remove blocked cards
-            std::vector<Core::Range> opp_ranges = opponent_ranges;
-            for (auto& r : opp_ranges)
-                r.removeBlocked(hero_hand.get());
-
-            std::vector<Core::Hand> opp_hands;
-            opp_hands.reserve(num_opponents);
+            auto& hero = sim_state.players[0];
+            hero.holeCards = sampleHandFromRange(hero.range,sim_state.deck,rng);
+            for (size_t i = 1; i < sim_state.players.size(); ++i) {
+                sim_state.players[i].range.removeBlocked(hero.holeCards.get());
+            }
 
             for (int i = 0; i < num_opponents; ++i) {
-                auto& r = opp_ranges[i];
+                int pid = i + 1;
+                auto& r = sim_state.players[pid].range;
 
                 auto combo_opt = r.sample(rng);
                 if (!combo_opt) throw std::runtime_error("No available combo for opponent");
                 auto combo = *combo_opt;
                 Core::Hand hand{{combo.c1, combo.c2}};
-                opp_hands.push_back(hand);
+                sim_state.players[pid].holeCards = std::move(hand);
 
-                sim_deck.remove(combo.c1);
-                sim_deck.remove(combo.c2);
+                sim_state.deck.remove(combo.c1);
+                sim_state.deck.remove(combo.c2);
 
                 // Remove these blockers from future players 
                 for (int j = i + 1; j < num_opponents; ++j) {
-                    opp_ranges[j].removeBlocked({combo.c1,combo.c2});
+                    int pid = j + 1;
+                    sim_state.players[pid].range.removeBlocked({combo.c1,combo.c2});
                 }
             }
 
-            auto sim_board = completeBoard(community.get(), MAX_BOARD_SIZE_NLH, sim_deck);
-            auto hero_cards = combineCards(hero_hand.get(), sim_board.get());
-            auto hero_rank = eval_.evaluate(hero_cards);
+            sim_state.board = completeBoard(sim_state.board.get(), MAX_BOARD_SIZE_NLH, sim_state.deck);
 
-            // Evaluate opponents
-            std::vector<Evaluator::HandRank> opp_ranks;
-            for (auto& h : opp_hands) {
-                h.add(sim_board.get());
-                opp_ranks.push_back(eval_.evaluate(h.get()));
+            std::vector<Evaluator::HandRank> ranks;
+            for(auto& p : sim_state.players) {
+                auto hand = p.holeCards;
+                hand.add(sim_state.board.get());
+                ranks.push_back(eval_.evaluate(hand.get()));
             }
+            
+            auto hero_rank = ranks[0];
 
             // Determine best score & update results
             auto best_score = hero_rank.score;
-            for (auto& r : opp_ranks)
+            for (auto it = ranks.begin() + 1; it != ranks.end(); ++it) {
+                auto r = *it;
                 if (r.score > best_score) best_score = r.score;
+            }
 
             if (hero_rank.score == best_score &&
-                std::count_if(opp_ranks.begin(), opp_ranks.end(),
+                std::count_if(ranks.begin() + 1, ranks.end(),
                             [&](auto& r){ return r.score == best_score; }) == 0) {
                 result.win += 1.0;
             } else if (hero_rank.score == best_score) {

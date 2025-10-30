@@ -2,6 +2,7 @@
 #define POKER_ENGINE_CORE_PLAYER_STATE_HPP
 
 #include "PokerEngine/core/hand.hpp"
+#include "PokerEngine/core/range.hpp"
 #include "PokerEngine/core/stack.hpp"
 
 namespace PokerEngine::Core {
@@ -12,6 +13,7 @@ struct PlayerState {
     Hand holeCards;
     bool hasFolded { false };
     bool isAllIn { false };
+    Range range;
 };
 }
 
