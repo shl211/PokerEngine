@@ -9,12 +9,15 @@
 
 namespace PokerEngine::GameTheory {
 
+enum class NodeType { Decision, Chance, Terminal };
+
 enum class ActionType {
     FOLD,
     CHECK,
     CALL,
     BET,
-    RAISE
+    RAISE,
+    DEAL
 };
 
 struct GameTreeNode;
@@ -27,6 +30,7 @@ struct ActionEdge {
 struct GameTreeNode {
     DecisionState state;
     std::vector<ActionEdge> children;
+    NodeType type = NodeType::Decision;
 
     bool isTerminal() const { return state.terminal; }
 

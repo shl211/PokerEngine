@@ -14,6 +14,7 @@ namespace PokerEngine::Core {
 
 class Deck {
 public:
+    Deck() {}
     explicit Deck(std::vector<Card> cards) 
         : cards_(cards), original_cards_{cards} {}
 

@@ -55,6 +55,9 @@ target_include_directories(PokerEngine
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE cxxopts PokerEngine)
 
+add_executable(gametree gametree.cpp)
+target_link_libraries(gametree PRIVATE PokerEngine)
+
 ###################################
 # Enable Tests
 ###################################
