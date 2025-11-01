@@ -1,10 +1,10 @@
-#ifndef POKER_ENGINE_GAME_THEORY_2_PLAYER_STATE_HPP
-#define POKER_ENGINE_GAME_THEORY_2_PLAYER_STATE_HPP
+#ifndef POKER_ENGINE_GAME_THEORY_PLAYER_STATE_HPP
+#define POKER_ENGINE_GAME_THEORY_PLAYER_STATE_HPP
 
 #include "PokerEngine/core/stack.hpp"
 #include "PokerEngine/core/hand.hpp"
 
-namespace PokerEngine::GameTheory2 {
+namespace PokerEngine::GameTheory {
 
 using PlayerId = int;
 
@@ -14,6 +14,7 @@ struct PlayerState {
     Core::Hand hand;
     int currentBet = 0;
     bool folded = false;
+    bool stillToAct = true;
 };
 
 }

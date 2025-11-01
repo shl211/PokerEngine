@@ -3,213 +3,242 @@
 
 #include <memory>
 #include <vector>
-
+#include <algorithm>
+#include "PokerEngine/utils/math.hpp"
 #include "PokerEngine/game_theory/game_tree_node.hpp"
-#include "PokerEngine/game_theory/decision_state.hpp"
 
 namespace PokerEngine::GameTheory {
 
 struct GameTreeBuilderConfig {
-    std::vector<double> betSizes; // e.g., {0.25, 0.5, 1.0} as fraction of pot
-    int maxDepth;                 // optional limit to avoid huge trees
+    std::vector<double> betFractions = {0.25, 0.5, 1.0};
+    int maxDepth = 3;
 };
 
 struct Action {
     ActionType type;
-    int amount; // 0 for fold/call/check
+    int amount = 0; //0 for fold, call, check
 };
 
 class GameTreeBuilder {
 public:
-    GameTreeBuilder(const GameTreeBuilderConfig& config);
+    explicit GameTreeBuilder(GameTreeBuilderConfig config)
+        : config_(std::move(config)) {}
 
-    std::shared_ptr<GameTreeNode> buildTree(const DecisionState& root_state);
+    std::shared_ptr<GameTreeNode> buildTree(const DecisionState& root);
 
 private:
     GameTreeBuilderConfig config_;
 
-    /**
-     * @brief Recursively expand a node
-     */
     std::shared_ptr<GameTreeNode> expandNode(const DecisionState& state, int depth);
-
-    /**
-     * @brief Generate legal actions for a given state
-     */
-    std::vector<ActionType> getLegalActions(const DecisionState& state);
-
-    /**
-     * @brief Generate next states for a given action
-     */
+    std::vector<Action> getLegalActions(const DecisionState& state);
     DecisionState simulateAction(const DecisionState& state, Action action);
-
 };
 
-std::vector<ActionType> GameTreeBuilder::getLegalActions(const DecisionState& state) {
-    std::vector<ActionType> actions;
-    const auto& player = state.activePlayers[state.currentPlayerIndex];
+namespace {
+    inline std::vector<DecisionState> dealAllPossibleNextCards(const DecisionState& curr, int cards_to_deal, Street next_street) {
+        std::vector<std::vector<Core::Card>> possible_next_cards = Utils::generate_combinations(curr.deck.begin(), curr.deck.end(), cards_to_deal);
 
-    if (state.activePlayers.size() > 1)
-        actions.push_back(ActionType::FOLD);
+        std::vector<DecisionState> next_states;
+        next_states.reserve(possible_next_cards.size());
 
-    int max_bet = std::max_element(
-        state.activePlayers.begin(), state.activePlayers.end(),
-        [](const PlayerState& p1, const PlayerState& p2) { return p1.currentBet < p2.currentBet; }
-    )->currentBet;
-    
-    if (player.currentBet < max_bet)
-        actions.push_back(ActionType::CALL);
-    else
-        actions.push_back(ActionType::CHECK);
-
-    // Simple logic: allow BET/RAISE if player has chips
-    if (player.stack.chips() > 0) {
-        actions.push_back(ActionType::BET);
-        if (player.currentBet > 0) {
-            actions.push_back(ActionType::RAISE);
+        for(const auto& card : possible_next_cards) {
+            auto next_state = curr;
+            next_state.deck.remove(card);
+            next_state.board.add(card);
+            next_state.round.street = next_street;
+            next_states.push_back(std::move(next_state));
         }
+        
+        return next_states;
     }
+}
 
-    return actions;
+std::shared_ptr<GameTreeNode> GameTreeBuilder::buildTree(const DecisionState& root) {
+    return expandNode(root, 0);
 }
 
 std::shared_ptr<GameTreeNode> GameTreeBuilder::expandNode(const DecisionState& state, int depth) {
     auto node = std::make_shared<GameTreeNode>();
     node->state = state;
 
-    // --- new branch: chance node handling ---
-    if (state.isChanceNode()) {
-        node->type = NodeType::Chance;
-
-        for (const auto& card : state.deck) {
-            DecisionState next = state;
-            next.board.add(card);
-            next.deck.remove(card);
-            auto next_node = expandNode(next, depth + 1);
-            node->addChild(ActionType::DEAL, next_node);
-        }
-
-        return node;
-    }
-
-    // --- terminal or depth limit ---
     if (state.isTerminal() || depth >= config_.maxDepth) {
         node->type = NodeType::Terminal;
         return node;
     }
 
-    // --- normal decision logic (unchanged) ---
-    auto legal_actions = getLegalActions(state);
+    if (state.isChanceNode()) {
+        node->type = NodeType::Chance;
 
-    for (auto action_type : legal_actions) {
-        if (action_type == ActionType::BET || action_type == ActionType::RAISE) {
-            for (double fraction : config_.betSizes) {
-                int pot_for_bet = state.pot.getTotal();
-                for (const auto &p : state.activePlayers) pot_for_bet += p.currentBet;
-                int bet_amount = static_cast<int>(fraction * pot_for_bet);
-
-                Action action{action_type, bet_amount};
-                auto next_state = simulateAction(state, action);
-                node->addChild(action_type, expandNode(next_state, depth + 1));
+        std::vector<DecisionState> next_states = [&state]() {
+            switch (state.round.street) {
+                case Street::PREFLOP:   return dealAllPossibleNextCards(state, 3, Street::FLOP);
+                case Street::FLOP:      return dealAllPossibleNextCards(state, 1, Street::TURN);
+                case Street::TURN:      return dealAllPossibleNextCards(state, 1, Street::RIVER);
+                default:                return std::vector<DecisionState>();
             }
-        } else {
-            Action action{action_type, 0};
-            auto next_state = simulateAction(state, action);
-            node->addChild(action_type, expandNode(next_state, depth + 1));
+        } ();
+        
+        
+        for (auto& next_state : next_states) {
+            next_state.round.resetForNextRound(next_state.players.size());
+            node->addChild(ActionType::DEAL, expandNode(next_state, depth + 1));
         }
+
+        return node;
+    }
+
+    node->type = NodeType::Decision;
+
+    for (auto action : getLegalActions(state)) {
+        auto nextState = simulateAction(state, action);
+        node->addChild(action.type, expandNode(nextState, depth + 1));
     }
 
     return node;
 }
 
-GameTreeBuilder::GameTreeBuilder(const GameTreeBuilderConfig& config)
-    : config_(config) {}
+std::vector<Action> GameTreeBuilder::getLegalActions(const DecisionState& state) {
+    std::vector<Action> actions;
 
-std::shared_ptr<GameTreeNode> GameTreeBuilder::buildTree(const DecisionState& root_state) {
-    return expandNode(root_state, 0);
-}
+    if(state.players.empty()) return actions;
 
-void advanceIfRoundComplete(DecisionState& state) {
-    if (state.activePlayers.empty() || state.isTerminal()) return;
+    const auto& player = state.players[state.round.currentPlayerIndex];
+
+    if(player.folded) return actions;
 
     int max_bet = 0;
-    for (const auto &p : state.activePlayers) 
-        max_bet = std::max(max_bet, p.currentBet);
-
-    bool all_equal = true;
-    for (const auto &p : state.activePlayers) {
-        if (p.currentBet != max_bet) { all_equal = false; break; }
+    for(const auto& p : state.players) {
+        if(!p.folded) max_bet = std::max(max_bet, p.currentBet);
     }
 
-    // Case 1: betting occurred
-    if (state.lastAggressorIndex != -1) {
-        if (all_equal && state.currentPlayerIndex == state.lastAggressorIndex) {
-            state.goToNextRound();
-        }
-    }
-    // Case 2: everyone checked through
-    else {
-        bool everyone_checked = true;
-        for (const auto &p : state.activePlayers) {
-            if (p.currentBet != 0) { everyone_checked = false; break; }
-        }
+    if(player.currentBet < max_bet) {
+        actions.push_back(Action{.type = ActionType::FOLD});
+        actions.push_back(Action{.type = ActionType::CALL});
 
-        if (everyone_checked) {
-            // Advance only if we've looped back to the first player
-            int next_index = state.nextPlayerIndex();
-            if (next_index == state.firstToActIndex) {
-                state.goToNextRound();
+        bool gone_all_in = false; //do not make duplicate all in bets
+        for(auto bet_size : config_.betFractions) {
+            int bet = bet_size * state.pot.getTotal();
+            if(bet <= player.currentBet || gone_all_in) {
+                continue;
             }
+
+            if(!player.stack.canAfford(bet)) {
+                gone_all_in = true;
+                bet = player.stack.chips();
+            }
+
+            actions.push_back(Action{ .type = ActionType::RAISE, .amount = bet});
+        }
+    } else {
+        actions.push_back(Action {.type = ActionType::CHECK});
+        
+        bool gone_all_in = false; //do not make duplicate all in bets
+        bool gone_min_size = false;//do not make duplicate min bets
+        int min_bet = 1;
+        for(auto bet_size : config_.betFractions) {
+            int bet = std::max(
+                static_cast<int>(bet_size * state.pot.getTotal()), min_bet);
+
+            if(bet <= player.currentBet || gone_all_in || gone_min_size) {
+                continue;
+            }
+
+            if(bet == min_bet) {
+                gone_min_size = true; 
+            }
+
+            if(!player.stack.canAfford(bet)) {
+                gone_all_in = true;
+                bet = player.stack.chips();
+            }
+
+            actions.push_back( Action{ .type = ActionType::BET, .amount = bet });
         }
     }
+
+    return actions;
 }
 
 DecisionState GameTreeBuilder::simulateAction(const DecisionState& state, Action action) {
     DecisionState next_state = state;
-    PlayerState &player = next_state.activePlayers[next_state.currentPlayerIndex];
+    auto& player = next_state.players[next_state.round.currentPlayerIndex];
 
-    switch (action.type) {
+    switch(action.type) {
         case ActionType::FOLD:
-            next_state.removePlayer(next_state.currentPlayerIndex);
-            if (next_state.activePlayers.size() == 1) {
-                next_state.terminal = true;
-            } else {
-                next_state.currentPlayerIndex %= next_state.activePlayers.size();
-            }
+            player.folded = true;
+            player.stillToAct = false;
             break;
-
-        case ActionType::CHECK:
-            next_state.currentPlayerIndex = next_state.nextPlayerIndex();
-            break;
-
         case ActionType::CALL: {
             int max_bet = 0;
-            for (const auto &p : next_state.activePlayers)
-                max_bet = std::max(max_bet, p.currentBet);
-
-            int to_call = std::min(max_bet - player.currentBet, player.stack.chips());
+            for (const auto& p : next_state.players) {
+                if (!p.folded) max_bet = std::max(max_bet, p.currentBet);
+            }
+            
+            int to_call = max_bet - player.currentBet;
+            to_call = std::min(to_call, player.stack.chips());
             player.currentBet += to_call;
             player.stack.removeChips(to_call);
-
-            next_state.currentPlayerIndex = next_state.nextPlayerIndex();
+            player.stillToAct = false;
             break;
         }
-
         case ActionType::BET:
         case ActionType::RAISE: {
-            int bet_amount = std::min(static_cast<int>(action.amount), player.stack.chips());
+            int max_bet = 0;
+            for (const auto& p : next_state.players) {
+                if (!p.folded) max_bet = std::max(max_bet, p.currentBet);
+            }
+            
+            int bet_amount = max_bet + std::min(player.stack.chips(), action.amount);
+            bet_amount -= player.currentBet;
+            
             player.currentBet += bet_amount;
             player.stack.removeChips(bet_amount);
             
-            next_state.lastAggressorIndex = next_state.currentPlayerIndex;
-            next_state.currentPlayerIndex = next_state.nextPlayerIndex();
+            next_state.round.lastAggressorIndex = next_state.round.currentPlayerIndex;
+
+            for(auto& p : next_state.players) {
+                if(p.id != player.id && !p.folded){
+                    p.stillToAct = true;
+                }
+            }
+            player.stillToAct = false;
+
             break;
+        }
+        case ActionType::CHECK:
+            player.stillToAct = false;
+            break;
+        default:
+            break;
+    }
+
+    // --- Advance to next active player ---
+    int num_players = next_state.players.size();
+    int start_index = next_state.round.currentPlayerIndex;
+    do {
+        next_state.round.advanceTurn(num_players);
+        // stop if we looped over all players
+        if(next_state.round.currentPlayerIndex == start_index) break;
+    } while(next_state.players[next_state.round.currentPlayerIndex].folded);
+    
+    // --- Check if game is terminal ---
+    int active_players = 0;
+    for (const auto& p : next_state.players) {
+        if(!p.folded) {
+            active_players++;
         }
     }
 
-    advanceIfRoundComplete(next_state);
+    if(active_players <= 1 || 
+        (next_state.round.street == Street::RIVER && next_state.isRoundEnded())) {
+        next_state.terminal = true;
+    } 
+
     return next_state;
 }
+
+
+
 
 
 }

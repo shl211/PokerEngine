@@ -8,10 +8,10 @@
 using namespace PokerEngine::Core::literals;
 
 int main() {
-    PokerEngine::GameTheory::GameTreeBuilderConfig config;
-    config.betSizes = {0.25, 0.5, 1.0};
-    config.maxDepth = 3;
-
+    PokerEngine::GameTheory::GameTreeBuilderConfig config {
+        .betFractions {0.25, 0.5, 1.0}, .maxDepth {10}
+    };
+    
     PokerEngine::GameTheory::GameTreeBuilder builder{config};
 
     auto deck = PokerEngine::Core::Factory::DeckFactory::createStandardDeck();
@@ -31,17 +31,22 @@ int main() {
     deck.remove(board.get());
     deck.remove(p1.hand.get());
     deck.remove(p2.hand.get());
-    
-    PokerEngine::GameTheory::DecisionState root_state{
-        .currentPlayerIndex = 0,
+
+    PokerEngine::GameTheory::RoundState round_state {
         .street = PokerEngine::GameTheory::Street::TURN,
-        .activePlayers{std::move(p1), std::move(p2)},
-        .pot{},
+    };
+    
+    PokerEngine::Core::Pot pot{};
+    pot.addContribution(p1.id, 5);
+    pot.addContribution(p2.id, 5);
+
+    PokerEngine::GameTheory::DecisionState root_state{
+        .round = round_state,
+        .players{std::move(p1), std::move(p2)},
+        .pot = std::move(pot),
         .board{std::move(board)},
         .deck{std::move(deck)}
     };
-
-    root_state.activePlayers = {std::move(p1), std::move(p2)};
 
     root_state.deck.shuffle();
     auto game_tree = builder.buildTree(root_state);
