@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <vector>
+#include "PokerEngine/utils/math.hpp"
 #include "PokerEngine/game_theory_2/game_tree_node.hpp"
 
 namespace PokerEngine::GameTheory2 {
@@ -28,14 +29,8 @@ private:
 };
 
 namespace {
-    template< class Iterator>
-    std::vector<Core::Card> n_choose_k_combos(Iterator begin, Iterator end, int k) {
-        //TODO, write in a util class
-        return {};
-    } 
-
     inline std::vector<DecisionState> dealAllPossibleNextCards(const DecisionState& curr, int cards_to_deal, Street next_street) {
-        std::vector<Core::Card> possible_next_cards = n_choose_k_combos(curr.deck.begin(), curr.deck.end(), cards_to_deal);
+        std::vector<std::vector<Core::Card>> possible_next_cards = Utils::generate_combinations(curr.deck.begin(), curr.deck.end(), cards_to_deal);
 
         std::vector<DecisionState> next_states;
         next_states.reserve(possible_next_cards.size());
