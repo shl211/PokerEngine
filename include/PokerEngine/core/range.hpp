@@ -53,7 +53,7 @@ private:
 
 };
 
-void Range::addCombo(const RangeToken& token) {
+inline void Range::addCombo(const RangeToken& token) {
     std::vector<Hand> expanded_combos = getHands(token);
     combos_.reserve(combos_.size() + expanded_combos.size());
 
@@ -62,7 +62,7 @@ void Range::addCombo(const RangeToken& token) {
     }
 }
 
-void Range::addCombo(Card c1, Card c2, double weight) {
+inline void Range::addCombo(Card c1, Card c2, double weight) {
     Combo combo{c1,c2,weight};
 
     if (std::ranges::find(combos_, combo) == combos_.end()) {
@@ -70,7 +70,7 @@ void Range::addCombo(Card c1, Card c2, double weight) {
     }
 }
 
-Range::Range(const RangeToken& token) {
+inline Range::Range(const RangeToken& token) {
     std::vector<Hand> expanded_combos = getHands(token);
     combos_.reserve(expanded_combos.size());
 
@@ -81,7 +81,7 @@ Range::Range(const RangeToken& token) {
 
 //TODO: this needs to be more efficient -> don't actually erase, just mark as erased
 //The search is O(N)
-void Range::removeBlocked(const std::vector<Card>& known) {
+inline void Range::removeBlocked(const std::vector<Card>& known) {
     std::erase_if(combos_, 
         [&](const Combo& c) {
             return std::ranges::find(known, c.c1) != known.end() ||
@@ -91,7 +91,7 @@ void Range::removeBlocked(const std::vector<Card>& known) {
 }
 
 //TODO: replace with prefix sums and O(logN) sampling
-std::optional<Combo> Range::sample(std::mt19937& rng) const {
+inline std::optional<Combo> Range::sample(std::mt19937& rng) const {
     if(combos_.empty()) return std::nullopt;
 
     double total_weight = std::accumulate(

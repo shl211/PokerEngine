@@ -30,12 +30,12 @@ private:
     void removeContribution(PlayerId id, int chips_to_remove);
 };
 
-void Pot::addContribution(PlayerId id, int chips) {
+inline void Pot::addContribution(PlayerId id, int chips) {
     contributions_[id] += chips;
     pot_total_ += chips;
 }
 
-int Pot::getContribution(PlayerId id) const {
+inline int Pot::getContribution(PlayerId id) const {
     int contribution = 0;
     if (auto it = contributions_.find(id); it != contributions_.end()) {
         contribution = it->second;
@@ -43,11 +43,11 @@ int Pot::getContribution(PlayerId id) const {
     return contribution;
 }
 
-int Pot::getTotal() const {
+inline int Pot::getTotal() const {
     return pot_total_;
 }
 
-void Pot::removeContribution(PlayerId id, int chips_to_remove) {
+inline void Pot::removeContribution(PlayerId id, int chips_to_remove) {
     if(contributions_.contains(id)) {
         int contribution = contributions_[id];
         int to_remove = std::min(chips_to_remove, contribution);
@@ -60,7 +60,7 @@ void Pot::removeContribution(PlayerId id, int chips_to_remove) {
  * @brief Given player id, their winnings will be returned. They can only win as much money from other players as they have put into the pot.
  * 
  */
-int Pot::getWinningsForPlayer(PlayerId id) {
+inline int Pot::getWinningsForPlayer(PlayerId id) {
     int player_max_winning_per_player = contributions_[id];
     removeContribution(id, player_max_winning_per_player);
     int total = player_max_winning_per_player;

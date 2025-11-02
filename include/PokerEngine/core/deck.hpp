@@ -14,6 +14,7 @@ namespace PokerEngine::Core {
 
 class Deck {
 public:
+    Deck() {}
     explicit Deck(std::vector<Card> cards) 
         : cards_(cards), original_cards_{cards} {}
 
@@ -45,18 +46,18 @@ private:
     std::vector<Card> original_cards_;
 };
 
-void Deck::shuffle() {
+inline void Deck::shuffle() {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     std::ranges::shuffle(cards_, gen);
 }
 
-void Deck::shuffle(unsigned seed) {
+inline void Deck::shuffle(unsigned seed) {
     std::mt19937 gen(seed);
     std::ranges::shuffle(cards_, gen);
 }
 
-Card Deck::draw() {
+inline Card Deck::draw() {
     if (cards_.empty()) {
         throw std::out_of_range("Cannot draw from empty deck");
     }
@@ -66,7 +67,7 @@ Card Deck::draw() {
     return selected;
 }
 
-Card Deck::peek() {
+inline Card Deck::peek() {
     if (cards_.empty()) {
         throw std::out_of_range("Cannot draw from empty deck");
     }
@@ -75,7 +76,7 @@ Card Deck::peek() {
     return selected;
 }
 
-std::vector<Card> Deck::draw(size_t n) {
+inline std::vector<Card> Deck::draw(size_t n) {
     if (n > cards_.size()) {
         throw std::out_of_range("Cannot draw more cards than are in the deck");
     }
@@ -86,12 +87,12 @@ std::vector<Card> Deck::draw(size_t n) {
     return drawn;
 }
 
-void Deck::remove(const Card& c) {
+inline void Deck::remove(const Card& c) {
     auto it = std::ranges::find(cards_, c);
     if (it != cards_.end()) cards_.erase(it);
 }
 
-void Deck::remove(const std::vector<Card>& to_remove) {
+inline void Deck::remove(const std::vector<Card>& to_remove) {
     std::erase_if(cards_, [&](const Card& card) {
         return std::ranges::find(to_remove, card) != to_remove.end();
     });
