@@ -32,7 +32,14 @@ struct DecisionState {
         return false;
     }
 
-    bool isTerminal() const { return terminal; }
+    bool isTerminal() const {
+        int active_players = std::count_if(players.begin(), players.end(),
+            [](const auto& p) { return !p.folded; } 
+        );
+
+        return active_players <= 1 ||
+            (round.street == Street::RIVER && isRoundEnded()); 
+        }
 
     bool isRoundEnded() const {
         for(auto& p : players) {
@@ -45,8 +52,22 @@ struct DecisionState {
     void resetForNextRound(int numPlayers) {
         round.resetForNextRound(numPlayers);
         for(auto& p : players) {
+            if(!p.currentBet != 0) {
+                pot.addContribution(p.id, p.currentBet);
+                p.currentBet = 0;
+            }
             if(!p.folded && !p.stack.empty()) p.stillToAct = true;
         }
+    }
+
+    void advancePlayerTurn() {
+        int num_players = players.size();
+        int start_index = round.currentPlayerIndex;
+        do {
+            round.advanceTurn(num_players);
+            // stop if we looped over all players
+            if(round.currentPlayerIndex == start_index) break;
+        } while(players[round.currentPlayerIndex].folded);
     }
 };
 }
