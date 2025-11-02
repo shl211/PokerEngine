@@ -9,8 +9,13 @@ using namespace PokerEngine::Core;
 using namespace PokerEngine::Core::literals;
 
 DecisionState createHeadsUpTurnScenario() {
-    PlayerState p1 {.id{0}, .stack{Stack{100}}, .hand{Hand{{"Ad"_c, "Kd"_c}}}};
-    PlayerState p2 {.id{1}, .stack{Stack{100}}, .hand{Hand{{"Tc"_c, "Qc"_c}}}};
+    Range p1_range{};
+    p1_range.addCombo("Ad"_c, "Kd"_c);
+    Range p2_range{};
+    p2_range.addCombo("Tc"_c, "Qc"_c);
+
+    PlayerState p1 {.id{0}, .stack{Stack{100}}, .range{std::move(p1_range)}};
+    PlayerState p2 {.id{1}, .stack{Stack{100}}, .range{std::move(p2_range)}};
     RoundState round {
         .street{ Street::TURN }, .currentPlayerIndex{0}, .firstToActIndex{0}
     };
@@ -20,8 +25,6 @@ DecisionState createHeadsUpTurnScenario() {
     Board board{{"7h"_c, "2s"_c, "Jc"_c, "2c"_c}};
     
     Deck deck = Factory::DeckFactory::createStandardDeck();
-    deck.remove(p1.hand.get());
-    deck.remove(p2.hand.get());
     deck.remove(board.get());
 
     return DecisionState {

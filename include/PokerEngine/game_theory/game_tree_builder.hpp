@@ -73,6 +73,7 @@ namespace {
         return actions;
     }
 
+    //this still requires work on getting fully correct raise logic
     inline std::vector<Action> getLegalBetActions(std::vector<double> bet_fractions, int pot_size, const PlayerState& player) {
         std::vector<Action> actions;
 

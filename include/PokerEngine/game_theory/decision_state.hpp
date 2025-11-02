@@ -52,7 +52,7 @@ struct DecisionState {
     void resetForNextRound(int numPlayers) {
         round.resetForNextRound(numPlayers);
         for(auto& p : players) {
-            if(!p.currentBet != 0) {
+            if(p.currentBet != 0) {
                 pot.addContribution(p.id, p.currentBet);
                 p.currentBet = 0;
             }
