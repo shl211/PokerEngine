@@ -80,7 +80,7 @@ std::shared_ptr<GameTreeNode> GameTreeBuilder::expandNode(const DecisionState& s
         
         
         for (auto& next_state : next_states) {
-            next_state.round.resetForNextRound(next_state.players.size());
+            next_state.resetForNextRound(next_state.players.size());
             node->addChild(ActionType::DEAL, expandNode(next_state, depth + 1));
         }
 

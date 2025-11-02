@@ -41,6 +41,13 @@ struct DecisionState {
 
         return true;
     }
+
+    void resetForNextRound(int numPlayers) {
+        round.resetForNextRound(numPlayers);
+        for(auto& p : players) {
+            if(!p.folded && !p.stack.empty()) p.stillToAct = true;
+        }
+    }
 };
 }
 

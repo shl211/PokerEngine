@@ -7,6 +7,7 @@ file(GLOB TEST_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/ev/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/evaluator/detail/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/game_theory/*.cpp"
 )
 
 add_executable(PokerEngine_tests

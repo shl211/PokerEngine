@@ -27,7 +27,7 @@ private:
 
 };
 
-Stack::Stack(int initial_amount) 
+inline Stack::Stack(int initial_amount) 
     : chips_(initial_amount) 
 {
     if (initial_amount < 0) {
@@ -35,13 +35,13 @@ Stack::Stack(int initial_amount)
     }
 }
 
-void Stack::addChips(int amount) {
+inline void Stack::addChips(int amount) {
     if (amount < 0)
         throw std::invalid_argument("Cannot add a negative amount");
     chips_ += amount;
 }
 
-int Stack::removeChips(int amount) {
+inline int Stack::removeChips(int amount) {
     if (amount < 0)
         throw std::invalid_argument("Cannot remove a negative amount");
 
