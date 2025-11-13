@@ -40,8 +40,8 @@ FetchContent_MakeAvailable(cxxopts googletest)
 #     PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
 # )
 
-# add_executable(app main.cpp)
-# target_link_libraries(app PRIVATE PokerEngine)
+# add_executable(poker-equity main.cpp)
+# target_link_libraries(poker-equity PRIVATE PokerEngine)
 
 ########################
 # PokerEngine (header-only)
@@ -52,8 +52,8 @@ target_include_directories(PokerEngine
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-add_executable(app main.cpp)
-target_link_libraries(app PRIVATE cxxopts PokerEngine)
+add_executable(poker-equity main.cpp)
+target_link_libraries(poker-equity PRIVATE cxxopts PokerEngine)
 
 add_executable(gametree gametree.cpp)
 target_link_libraries(gametree PRIVATE PokerEngine)

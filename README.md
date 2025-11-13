@@ -1,53 +1,80 @@
 # Poker Engine
 
-This project provides analysis tools for poker. This currently includes:
+This project attempts to provide high performance analysis tools for a variety of poker variants.
 
-- Monte Carlo NLH(No Limit Hold'em) Equity Calculator
+## Features
 
-# Installation
+- ⚙️ **Multi-variant support** (in progress)
+  - [x] No Limit Hold’em (NLH)
+  - [ ] Pot Limit Omaha (PLO)
+  - [ ] Short Deck Hold’em (6+ Hold’em)
+  - [ ] Seven-Card Stud
+- 🎲 **Monte Carlo simulation engine** for flexible equity estimation  
+- 🧮 **Exact enumeration** for small state spaces  
+- 🃏 **Support for:**
+  - Hand vs Hand  
+  - Hand vs Range  
+  - Range vs Range  
+  - Pre-flop and post-flop configurations
+- 📈 **Customizable simulation parameters** (e.g. number of trials)
 
-To build this project from source, clone this repository:
+## Installation
 
-```
+Clone the repository:
+
+```bash
 git clone git@github.com:shl211/PokerEngine.git
+cd PokerEngine
 ```
 
-To build this project on Linux:
+Build from source (Linux):
 
 ```
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 make
 ```
 
-Check installation by running tests with `ctest`. The application executable is `app`. 
-To generate the documentation, navigate to `docs/` and run `doxygen`.
-
-# Monte Carlo NLH Equity Calculator
-
-An NLH equity calculator based off Monte Carlo simulations is implemented for hand-vs-hand, hand-vs-range, range-vs-hand, and range-vs-range. Pre-flop and post-flop situations can all be specified. 
-
-Some examples:
+Run tests to verify installation:
 
 ```
-./app --hero AdKd --villain AhKh #Hand vs Hand pre-flop
+ctest
 ```
 
-```
-./app --hero AdKd --villain AhKh --board 2h3cTs #Hand vs Hand post-flop
-```
+Generate documentation:
 
 ```
-./app --hero AdKd --villain-range "KK+,AKs" #Hand vs Range
+cd docs
+doxygen
 ```
 
+# Usage
+
+Example commands:
+
 ```
-./app --hero-range "KK+,AKs" --villain 8d9d  #Hand vs Range
+# Hand vs Hand (NLH pre-flop)
+./poker-equity --hero AdKd --villain AhKh #Hand vs Hand pre-flop
 ```
 
 ```
-./app --hero-range "AA,AK,AQ" --villain-range "KK+,AKs" #Range vs Range
+# Hand vs Hand (post-flop)
+./poker-equity --game nlh --hero AdKd --villain AhKh --board 2h3cTs
+```
+
+```
+ #Hand vs Range
+./poker-equity --hero AdKd --villain-range "KK+,AKs"
+```
+
+```
+# Hand vs Range
+./poker-equity --game nlh --hero AdKd --villain-range "KK+,AKs"
+```
+
+```
+# Range vs Range
+./poker-equity --game nlh --hero-range "AA,AK,AQ" --villain-range "KK+,AKs"
 ```
 
 Standard poker notation for specifying cards and ranges are used.
