@@ -15,13 +15,13 @@ namespace PokerEngine::Simulator {
 
 template<typename SimStrategy>
 concept PokerSimStrategy = requires(const SimStrategy& s,
-                                 const Core::Range& my_range,
-                                 const Core::Board& board,
-                                 int num_opponents,
-                                 Core::Deck deck,
-                                 const std::vector<Core::Range>& opponent_ranges,
-                                 int iterations,
-                                 unsigned seed) {
+                                const Core::Range& my_range,
+                                const Core::Board& board,
+                                int num_opponents,
+                                Core::Deck deck,
+                                const std::vector<Core::Range>& opponent_ranges,
+                                int iterations,
+                                unsigned seed) {
     { s.run(my_range, board, num_opponents, deck, opponent_ranges, iterations, seed) }
         -> std::same_as<SimResult>;
 };
@@ -31,7 +31,7 @@ class PokerSimulator {
 public:
     PokerSimulator(Core::Range my_range, Core::Board board, int num_opponents, Core::Deck deck)
         : my_range_(std::move(my_range)), community_cards_(std::move(board)),
-          num_opponents_(num_opponents), deck_(std::move(deck)) {}
+        num_opponents_(num_opponents), deck_(std::move(deck)) {}
 
     template<typename SimStrategy>
     SimResult simulate(const SimStrategy& strategy,

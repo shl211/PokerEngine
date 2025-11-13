@@ -38,7 +38,7 @@ class HandEvaluatorFixture : public ::testing::TestWithParam<HandEvaluatorParams
 TEST_P(HandEvaluatorFixture, TexasHoldEm) {
     auto test_params = GetParam();
 
-    auto texas_hold_em_evaluator = PokerEngine::Evaluator::HandEvaluator();
+    PokerEngine::Evaluator::HandEvaluator texas_hold_em_evaluator {PokerEngine::Evaluator::getStandardEvaluationStrategy()};
 
     std::vector<Card> all_cards = test_params.hole_cards;
     all_cards.insert(all_cards.end(),
@@ -121,7 +121,7 @@ INSTANTIATE_TEST_SUITE_P(
 
 //TODO: refactor into test suite
 TEST(HandEvaluator, HandEvaluatorScores) {
-    PokerEngine::Evaluator::HandEvaluator evaluator{};
+    PokerEngine::Evaluator::HandEvaluator evaluator { PokerEngine::Evaluator::getStandardEvaluationStrategy() };
 
     std::vector<Card> community = {"Ac"_c, "6h"_c, "7c"_c, "5c"_c, "5s"_c};
     std::vector<Card> hole1 = {"Ad"_c, "5d"_c};//full house
@@ -140,7 +140,7 @@ TEST(HandEvaluator, HandEvaluatorScores) {
 }
 
 TEST(HandEvaluator, HandEvaluatorScores1) {
-    PokerEngine::Evaluator::HandEvaluator evaluator{};
+    PokerEngine::Evaluator::HandEvaluator evaluator { PokerEngine::Evaluator::getStandardEvaluationStrategy() };
 
     std::vector<Card> community = {"Ac"_c, "6h"_c, "7c"_c, "5c"_c, "5s"_c};
     std::vector<Card> hole1 = {"Kc"_c, "3c"_c};//K-high flush

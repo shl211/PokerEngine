@@ -16,6 +16,8 @@
 
 namespace PokerEngine::Simulator {
 
+
+
 class MonteCarloNLHStrategy {
 public:
     MonteCarloNLHStrategy() = default;
@@ -31,7 +33,7 @@ public:
     ) const;
 
 private:
-    Evaluator::HandEvaluator eval_{};
+    Evaluator::HandEvaluator eval_{Evaluator::getStandardEvaluationStrategy()};
 };
 
 namespace {
